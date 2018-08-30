@@ -1,231 +1,189 @@
-#include <iostream>
-typedef bool rbtree_colortype;
-const rbtree_colortype rbtreeRed=false;
-const rbtree_colortype rbtreeBlack=true;
-class RBTreeNode_Base{
-	typedef rbtree_colortype color_type;
-	typedef RBTreeNode_Base * base_ptr;
-
-	color_type color;
-	base_ptr parent;
-	base_ptr left;
-	base_ptr right;
-
-	static base_ptr minimum(base_ptr x){
-		while(x->left!=0)
-			x=x->left;
-		return x;
-	}
-
-	static base_ptr minimum(base_ptr x){
-		while(x->right!=0)
-			x=x->right;
-		return x;
-	}
-}
-template<class Value>
-class RBTreeNode:public RBTreeNode_Base
-{
-	typedef RBTreeNode<Value>* link_type;
-	Value value_field;
-}
-
-base_ptr node;
-void increment(){
-	if(node->right!=0){
-		node=node->right;
-		while(node->left!=0)
-			node=node->left; //如果有右子节点，右走到尽头再向左边走
-	}
-	else{
-		base_ptr y=node->parent;//如果没有右子节点，则寻找其父节点
-		while(node == y->right){
-			node=y;
-			y=y->parent;
-		}
-		if(node->right!=y)
-			node=y;
-	}
-}
-
-void decrement(){
-	if(node->color==rbtreeRed && node->parent->parent==node)
-		node=node->right;
-	else if(node->left!=0){
-		base_ptr y=node->left；
-		while(y->right!-0)
-			y=y->right;
-		node=y;
-	}
-	else{
-		base_ptr y=node->parent;
-		while(node==y->left){
-			node=y;
-			y=y->parent;
-		}
-		node=y;
-	}
-}
-
-RBTreeNode& operator++() { increment(); return *this;}
-RBTreeNode operator++(int){
-	self tmp=*this;
-	increment();
-	return tmp;
-}
-
-RBTreeNode& operator--() { decrement(); return *this;}
-RBTreeNode operator--(int){
-	self tmp=*this;
-	decrement();
-	return tmp;
-}
-
-
-template<class Value>
+#ifndef RBTREENEW_H_INCLUDED
+#define RBTREENEW_H_INCLUDED
+#include<iostream>
+using namespace std;
+class RBTreeNode{
+public:
+    bool color;
+    int value;
+    RBTreeNode * parent,* left,*right;
+public:
+    RBTreeNode(){this->color=true;}
+    RBTreeNode(int value){this->value=value;this->color=true;}
+    RBTreeNode(int value,bool color){this->value=value; this->color=color;}
+};
 class RBTree{
-protected:
-	typedef rbtree_colortype color_type;
-	typedef RBTreeNode_Base * base_ptr;
-	typedef RBTreeNode<Value> RBTreeNode;
-	typedef rbtree_colortype color_type; 
-public:
-	typedef Key key_type; //?
-	typedef Value value_type;
-	typedef value_type* pointer;
-	typedef const value_type* const_pointer;
-	typedef value_type& reference;
-	typedef const value_type& const_reference;
-	typedef RBTreeNode<Value>* link_type;
-	typedef size_t size_type;
-	typedef ptrdiff_t difference_type;
-protected:
-	link_type get_node(){return (link_type)malloc(sizeof(RBTreeNode_Base));}
-	void put_node(link_type p){free(p);}
-
-	link_type create_node(const value_type& x){
-		link_type tmp=get_node();
-		tmp->value_field=x;
-		return tmp; //?异常处理
-	}
-	link_type clone_node(link_type x){
-		link_type tmp=create_node(x->value_field);
-		tmp->color=x->color;
-		tmp->left=0;
-		tmp->right=0;
-		return tmp;
-	}
-	void destroy_node(link_type p){
-		destroy(&p->value_field);
-		put_node(p);
-	}
-protected:
-	size_type node_count;
-	link_type header; //实现上的一个技巧
-	Compare key_compare; //节点间的键值比较准则，function object.	
-
-	link_type& root() const {return (link_type&) header->parent;}
-	link_type& leftmost() const {return (link_type&) header->left;}
-	link_type& rightmost() const {return (link_type&) header->right;}
-
-	static link_type& left(link_type x){ return (link_type&)(x->left);}
-	static link_type& right(link_type x){ return (link_type&)(x->right);}
-	static link_type& left(link_type x){ return (link_type&)(x->left);}
-	static reference value(link_type x){return x->value_field;}
-	//static const Key& key(link_type x){return KeyOfValue() (value(x));}
-	static color_type&  color(link_type x){return (color_type&) (x->color);}
-	static link_type& left(base_ptr x){return (link_type&) x->left;}
-	static link_type& right(base_ptr x){return (link_type&) x->right;}
-	static link_type& parent(base_ptr x){return (link_type&) x->parent;}
-	static reference value(base_ptr x){return ((link_type&)x)->value_field;}
-	static const Key& key(base_ptr x){return KeyOfValue()(value(link_type(x)));}
-	static color_type& color(base_ptr x){return (color_type&)(link_type(x)->color);}
-
-	static link_type minimum(link_type x){
-		return (link_type) RBTreeNode_Base::minimum(x);
-	}
-
-	static link_type maximum(link_type x){
-		return (link_type) RBTreeNode_Base::maximum(x);
-	}
+    typedef RBTreeNode * link_type;
 private:
-	iterator _insert(base_ptr x,base_ptr y,const value_type& v);
-	link_type _copy(link_type x,link_type p);
-	void _erase(link_type x);
-	void init(){
-		header=get_node();
-		color(header)=rbtreeRed;
-		root()=0;
-		leftmost()=header;
-		rightmost()=header;
-	}
+    void init(){
+        header=new RBTreeNode();
+        header->color=true;
+        root()=0;
+        leftmost()=header;
+        rightmost()=header;
+    }
 public:
-	RBTree(const Compare& comp=Compare()):node_count(0),key_compare(comp) {init();}
-	~RBTree(){clear(); put_node(header);}
-public:
-	Compare key_comp() const{return key_compare;}
-	iterator begin(){return leftmost();}
-	iterator end() {return header;}
-	bool empty() const{return node_count;}
-	size_type size() const {return node_count;}
-	size_type max_size() const {return size_type(-1);}
+    link_type header; //实现上的技巧
+    link_type& root(){return (link_type&) header->parent;}
+    link_type& left(link_type x){return (link_type&) x->left;}
+    link_type& right(link_type x){return (link_type&) x->right;}
+    link_type& leftmost(){return (link_type&) header->left;}
+    int getvalue(link_type x){return x->value;}
+    link_type& rightmost(){return (link_type&) header->right;}
+    RBTree(){init();}
+    void _insert(link_type x_,link_type y_,const int &v){
+        link_type x=(link_type) x_;
+        link_type y=(link_type) y_;
+        link_type z;
+        if(y==header || x!=0 || v<getvalue(y)){
+            z=new RBTreeNode(v);
+            left(y)=z;
+            if(header==y){
+                root()=z;
+                rightmost()=z;
+            }
+            else if(y==leftmost())
+                leftmost()=z;
+        }
+        else{
+            z=new RBTreeNode(v);
+            right(y)=z;
+            if(y==rightmost())
+                rightmost()=z;
+        }
+        z->parent = y;
+        left(z)=0;
+        right(z)=0;
+        _rb_tree_rebalance(z,header->parent);
+    }
+    void insert_equal(const int& v){
+        link_type y=header;
+        link_type x=root();
+        while(x!=0){
+            y=x;
+            x=v<x->value?left(x):right(x);
+        }
+        _insert(x,y,v);
+    }
+    void decrement(link_type& x){
+        if(x->color==true &&  x->parent->parent==x){
+            x=x->right;
+        }
+        else if(x->left!=0){
+            link_type y=x->left;
+            while(y->right!=0)
+                y=y->right;
+            x=y;
+        }
+        else{
+            link_type y=x->parent;
+            while(x==y->left){
+                x=y;
+                y=y->parent;
+            }
+            x=y;
+        }
+    }
+     bool insert_unique(const int& v){
+        link_type y=header;
+        link_type x=root();
+        bool result=false;
+        bool comp=true;
+        while(x!=0){
+            y=x;
+            comp=v<x->value;
+            x=comp?left(x):right(x);
+        }
+        link_type j= y;
+        if(comp){
+            if(j==leftmost()){
+                _insert(x,y,v);
+                result=true;
+            }
+            else{
+                decrement(j); //存在问题
+            }
+        }
+        if(j->value<v){
+            _insert(x,y,v);
+            result=true;
+        }
+        return result;
+    }
+    inline void _rb_tree_rebalance(link_type x,link_type &root){
+        x->color=true;
+        while(x!=root && x->parent->color==true){
+            if(x->parent==x->parent->parent->left){//父节点是祖父节点的左节点
+                link_type y=x->parent->parent->right;
+                if(y && y->color==true){
+                    x->parent->color=false;
+                    y->color=false;
+                    x->parent->parent->color=true;
+                    x=x->parent->parent;
+                }
+                else{//无伯父节点，或者伯父节点为黑
+                    if(x==x->parent->right){
+                        x=x->parent;
+                        _rb_tree_rotate_left(x,root);
+                    }
+                    x->parent->color=false;
+                    x->parent->parent->color=true;
+                    _rb_tree_rotate_right(x->parent->parent,root);
+                }
+            }
+            else{
+                link_type y=x->parent->parent->left;
+                if(y && y->color==true){
+                    x->parent->color=false;
+                    y->color=false;
+                    x->parent->parent->color=true;
+                    x=x->parent->parent;  //继续往上层检查
+                }
+                else{
+                    if(x==x->parent->left){
+                        x=x->parent;
+                        _rb_tree_rotate_right(x,root);
+                    }
+                    x->parent->color=false;
+                    x->parent->parent->color=true;
+                    _rb_tree_rotate_left(x->parent->parent,root);
+                }
+            }
+        }
+        root->color=false;
+    }
+        inline void _rb_tree_rotate_left(link_type x,link_type  & root){
+            link_type y=x->right;
+            x->right=y->left;
+            if(y->left!=0)
+                y->left->parent=x;
+            y->parent=x->parent;
+            if(x==root)
+                root=y;
+            else if(x==x->parent->left)
+                x->parent->left=y;
+            else
+                x->parent->right=y;
+            y->left=x;
+            x->parent=y;
+        }
+        inline void _rb_tree_rotate_right(link_type x,link_type  & root){
+            link_type y=x->left;
+            x->left=y->right;
+            if(y->right!=0)
+                y->right->parent=x;
+            y->parent=x->parent;
+            if(x==root)
+                root=y;
+            else if(x==x->parent->right)
+                x->parent->right=y;
+            else
+                x->parent->left=y;
+            y->right=x;
+            x->parent=y;
+        }
+
 };
 
-RBTree<Value>::insert_equal(const Value& v){
-	link_type y=header;
-	link_type x=root();
-	while(x!=0){
-		y=x;
-		x=key_compare(KeyOfValue()(v),key(x))?left(x):right(x);
-	}
-	return _insert(x,y,v);
-}
 
-RBTree<Value>::insert_unique(const Value& v){
-	link_type y=hader;
-	link_type x=root();
-	bool comp=true;
-	while(x!=0){
-		y=x;
-		comp=key_compare(KeyOfValue()(v),key(x));
-		x=comp?left(x):right(x);
-	}
-	iterator j=iterator (y);
-	if(comp)
-		if(j==begin())
-			return pair<iterator,bool> (_insert(x,y,v),true);
-		else:
-			--j;
-	if(key_compare(key(j.node),KeyOfValue()(v)))
-		return pair<iterator,bool>(_insert(x,y,z),true);
-	return pair<iterator,bool>(j,false);
-}
-
-RBTree<Value>::_insert(base_ptr x_,base_ptr y_,const Value &v){
-	link_type x=(link_type) x_;
-	link_type y=(link_type) y_;
-	link_type z;
-
-	if(y==header || x!=0 || key_compare(KeyOfValue()(v),key(y))){
-		z=create_node(v);
-		left(y)=z;
-		if(y==header){
-			root()=z;
-			rightmost()=z;
-		}
-		else if(y==leftnost())
-			leftmost()=z;
-	}
-	else{
-		z=create_node(v);
-		right(y)=z;
-		if(y==rightmost())
-			rightmost()=z;
-	}
-	parent(z)=y;
-	left(z)=0;
-	right(z)=0;
-	_rb_tree_rebalance(z,header->parent);
-	++node_count;
-	return iterator(z);
-}
+#endif // RBTREENEW_H_INCLUDED
